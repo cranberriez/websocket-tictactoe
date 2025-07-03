@@ -49,30 +49,48 @@ const OnlineGame: React.FC<OnlineGameProps> = ({ mode, gameId: inputGameId }) =>
 	}, [mode]);
 
 	// Join an existing game
-	const handleJoinGame = async (e?: React.MouseEvent) => {
-		const joinCode = joinInput;
+	const handleJoinGame = async (joinCode: string) => {
+		setError("");
 		if (!joinCode) {
-			setError("Please enter a game code");
+			setError("Please enter a game code.");
 			return;
 		}
 
-		setGameId(joinCode);
-		// Generate unique player ID for guest
-		const newPlayerId = generateRoomCode();
-		setPlayerId(newPlayerId);
-
 		try {
-			// Add the player to game state
+			// Generate player ID and set state
+			const newPlayerId = generateRoomCode();
+			setPlayerId(newPlayerId);
+			setGameId(joinCode);
+
+			// Try to join the game on the server
+			const response = await apiService.joinGame(joinCode, newPlayerId);
+			if (!response.ok) {
+				const errorData = await response.json();
+				if (response.status === 400 || response.status === 404) {
+					setError("Game does not exist or is not joinable. Please check the code.");
+				} else {
+					setError(errorData.error || "Failed to join the game. Please try again.");
+				}
+				// Reset gameId on error
+				setGameId("");
+				return;
+			}
+
+			// Add the player to local game state
 			dispatch({
 				type: "JOIN_GAME",
 				payload: { playerId: newPlayerId, isYou: true },
 			});
 
-			// Notify the server that a player has joined
-			await apiService.joinGame(joinCode, newPlayerId);
+			// Show success message
+			setMessage("Successfully joined the game! Waiting for host to start...");
+
+			// No need to refresh the page - the Pusher subscription will handle updates
 		} catch (err) {
 			console.error("Error joining game:", err);
-			setError("Failed to join the game. Please try again.");
+			setError("Network error or server unavailable. Please try again.");
+			// Reset gameId on error
+			setGameId("");
 		}
 	};
 
@@ -171,44 +189,50 @@ const OnlineGame: React.FC<OnlineGameProps> = ({ mode, gameId: inputGameId }) =>
 		const channel = pusher.subscribe(`game-${gameId}`);
 
 		// Listen for game events
-		channel.bind("game-move", (data: any) => {
+		channel.bind("game-updated", (data: any) => {
 			// Update local game state with new move
-			dispatch({
-				type: "SYNC_GAME_STATE",
-				payload: data.gameState,
-			});
+			if (data.type === "move") {
+				dispatch({
+					type: "SYNC_GAME_STATE",
+					payload: { squares: data.squares, nextPlayer: data.nextPlayer },
+				});
+			}
 		});
 
-		channel.bind("game-join", (data: any) => {
-			setMessage("Another player has joined the game!");
-			dispatch({
-				type: "JOIN_GAME",
-				payload: { playerId: data.playerId, isYou: false },
-			});
+		channel.bind("player-updated", (data: any) => {
+			if (data.type === "join") {
+				setMessage("Another player has joined the game!");
+				dispatch({
+					type: "JOIN_GAME",
+					payload: { playerId: data.playerId, isYou: false },
+				});
+			}
 		});
 
-		channel.bind("game-start", (data: any) => {
-			setMessage("Game has started!");
-			dispatch({
-				type: "SYNC_GAME_STATE",
-				payload: data.gameState,
-			});
-		});
-
-		channel.bind("game-reset", (data: any) => {
-			setMessage("Game has been reset!");
-			dispatch({
-				type: "SYNC_GAME_STATE",
-				payload: data.gameState,
-			});
-		});
-
-		channel.bind("game-end", (data: any) => {
-			// Handle game end
-			dispatch({
-				type: "SYNC_GAME_STATE",
-				payload: data.gameState,
-			});
+		channel.bind("game-state-changed", (data: any) => {
+			switch (data.type) {
+				case "start":
+					setMessage("Game has started!");
+					dispatch({
+						type: "START_GAME",
+						payload: { nextPlayer: data.nextPlayer },
+					});
+					break;
+				case "reset":
+					setMessage("Game has been reset!");
+					dispatch({
+						type: "RESET_GAME",
+						payload: { nextPlayer: data.nextPlayer },
+					});
+					break;
+				case "end":
+					setMessage(data.winner === "draw" ? "Game ended in a draw!" : `${data.winner} wins!`);
+					dispatch({
+						type: "END_GAME",
+						payload: { winner: data.winner },
+					});
+					break;
+			}
 		});
 
 		return () => {
@@ -221,9 +245,6 @@ const OnlineGame: React.FC<OnlineGameProps> = ({ mode, gameId: inputGameId }) =>
 	if (!gameState.hasStarted) {
 		return (
 			<div className="flex flex-col gap-4">
-				{message && (
-					<div className="bg-blue-100 dark:bg-blue-900 p-4 rounded mb-4">{message}</div>
-				)}
 				{error && (
 					<div className="bg-red-100 dark:bg-red-900 p-4 rounded mb-4 text-red-600">
 						{error}
@@ -237,7 +258,7 @@ const OnlineGame: React.FC<OnlineGameProps> = ({ mode, gameId: inputGameId }) =>
 						players={gameState.players}
 						currentPlayerId={playerId}
 						onStartGame={handleStartGame}
-						onJoinGame={() => {}}
+						onJoinGame={handleJoinGame}
 					/>
 				) : (
 					<>
@@ -252,28 +273,29 @@ const OnlineGame: React.FC<OnlineGameProps> = ({ mode, gameId: inputGameId }) =>
 								id="gameCode"
 								type="text"
 								value={joinInput}
-								onChange={(e) => setJoinInput(e.target.value)}
-								className="px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-								placeholder="Enter the 6-character game code"
+								onChange={(e) => setJoinInput(e.target.value.toUpperCase())}
+								className="px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-lg tracking-wider uppercase"
+								placeholder="ABCD12"
+								maxLength={6}
 							/>
 
 							<button
-								onClick={handleJoinGame}
+								onClick={(e) => {
+									e.preventDefault(); // Prevent default form submission
+									handleJoinGame(joinInput);
+								}}
 								className="mt-2 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition"
 							>
 								Join Game
 							</button>
 						</div>
+						{message && (
+							<div className="mt-4 p-3 bg-blue-100 dark:bg-blue-900 rounded">{message}</div>
+						)}
 					</>
 				)}
 
 				{/* Show player list if we're in a game */}
-				{gameState.players.length > 0 && (
-					<PlayerList
-						players={gameState.players}
-						currentPlayerId={playerId}
-					/>
-				)}
 			</div>
 		);
 	}
