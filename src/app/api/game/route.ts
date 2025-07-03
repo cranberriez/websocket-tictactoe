@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { pusherServer } from "@/lib/pusher-server";
+import { GameEventType } from "@/types/game";
 
 export async function POST(req: NextRequest) {
 	try {
-		const { gameId, squares, nextPlayer, event } = await req.json();
+		const body = await req.json();
+		const { gameId, event } = body;
 
 		// Validate the request
 		if (!gameId || !event) {
@@ -11,8 +13,9 @@ export async function POST(req: NextRequest) {
 		}
 
 		// Handle different event types
-		switch (event) {
+		switch (event as GameEventType) {
 			case "game-move":
+				const { squares, nextPlayer } = body;
 				if (!squares || !nextPlayer) {
 					return NextResponse.json({ error: "Missing game state data" }, { status: 400 });
 				}
@@ -21,20 +24,54 @@ export async function POST(req: NextRequest) {
 				await pusherServer.trigger(`game-${gameId}`, "game-updated", {
 					squares,
 					nextPlayer,
+					type: "move"
 				});
 				break;
 
-			case "game-join":
+			case "player-join":
+				const { playerId } = body;
+				if (!playerId) {
+					return NextResponse.json({ error: "Missing player ID" }, { status: 400 });
+				}
+
 				// Notify that a player has joined
-				await pusherServer.trigger(`game-${gameId}`, "player-joined", {
-					message: "A new player has joined the game",
+				await pusherServer.trigger(`game-${gameId}`, "player-updated", {
+					playerId,
+					type: "join"
+				});
+				break;
+
+			case "game-start":
+				const { nextPlayer: startingPlayer } = body;
+				
+				// Notify that the game has started
+				await pusherServer.trigger(`game-${gameId}`, "game-state-changed", {
+					hasStarted: true,
+					nextPlayer: startingPlayer,
+					type: "start"
+				});
+				break;
+
+			case "game-reset":
+				const { nextPlayer: resetNextPlayer } = body;
+				
+				// Notify that the game has been reset
+				await pusherServer.trigger(`game-${gameId}`, "game-state-changed", {
+					squares: Array(9).fill(null),
+					nextPlayer: resetNextPlayer,
+					winner: null,
+					type: "reset"
 				});
 				break;
 
 			case "game-end":
+				const { winner } = body;
+				
 				// Notify that the game has ended
-				await pusherServer.trigger(`game-${gameId}`, "game-over", {
-					winner: squares ? squares.winner || "draw" : "unknown",
+				await pusherServer.trigger(`game-${gameId}`, "game-state-changed", {
+					winner: winner || "draw",
+					isComplete: true,
+					type: "end"
 				});
 				break;
 
