@@ -1,0 +1,85 @@
+.game {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 20px auto;
+  max-width: 800px;
+}
+
+.game-board {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.board-row {
+  display: flex;
+  gap: 2px;
+}
+
+.square {
+  width: 80px;
+  height: 80px;
+  background: #fff;
+  border: 1px solid #999;
+  font-size: 36px;
+  font-weight: bold;
+  line-height: 80px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.square:focus {
+  outline: none;
+}
+
+.square.winning {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.square.filled {
+  background-color: #f8f9fa;
+}
+
+.game-info {
+  margin-left: 20px;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .square {
+    background: #333;
+    border-color: #555;
+    color: #fff;
+  }
+  
+  .square.winning {
+    background-color: #1e4620;
+    color: #d4edda;
+  }
+  
+  .square.filled {
+    background-color: #444;
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .square {
+    width: 60px;
+    height: 60px;
+    line-height: 60px;
+    font-size: 28px;
+  }
+}
+
+@media (max-width: 400px) {
+  .square {
+    width: 50px;
+    height: 50px;
+    line-height: 50px;
+    font-size: 24px;
+  }
+}
