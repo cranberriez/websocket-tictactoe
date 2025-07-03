@@ -2,11 +2,14 @@
 
 import React, { useState, useEffect } from "react";
 import Board from "./Board";
+import "./TicTacToe.css";
 
 interface GameProps {
 	gameId?: string;
 	playerId?: string;
 	onlineMode?: boolean;
+	externalSquares?: Array<string | null>;
+	externalNextPlayer?: string;
 	onGameUpdate?: (squares: Array<string | null>, nextPlayer: string) => void;
 	onGameEnd?: (winner: string | null) => void;
 }
@@ -15,6 +18,8 @@ const Game: React.FC<GameProps> = ({
 	gameId,
 	playerId,
 	onlineMode = false,
+	externalSquares,
+	externalNextPlayer,
 	onGameUpdate,
 	onGameEnd,
 }) => {
@@ -27,6 +32,18 @@ const Game: React.FC<GameProps> = ({
 	const [winningLine, setWinningLine] = useState<number[]>([]);
 	const [status, setStatus] = useState("");
 
+	// Handle external game state updates (for online mode)
+	useEffect(() => {
+		if (onlineMode && externalSquares) {
+			const newHistory = history.slice(0, stepNumber + 1);
+			newHistory.push({ squares: [...externalSquares] });
+			setHistory(newHistory);
+			setStepNumber(newHistory.length - 1);
+			setXIsNext(externalNextPlayer === "X");
+		}
+	}, [externalSquares, externalNextPlayer]);
+
+	// Update game status
 	useEffect(() => {
 		const current = history[stepNumber];
 		const result = calculateWinner(current.squares);
@@ -56,6 +73,7 @@ const Game: React.FC<GameProps> = ({
 		if (onlineMode && playerId) {
 			const playerSymbol = playerId === gameId ? "X" : "O";
 			if ((xIsNext && playerSymbol !== "X") || (!xIsNext && playerSymbol !== "O")) {
+				console.log("Not your turn!");
 				return;
 			}
 		}
@@ -67,7 +85,7 @@ const Game: React.FC<GameProps> = ({
 		setXIsNext(!xIsNext);
 
 		// Notify about game update for online mode
-		if (onGameUpdate) {
+		if (onlineMode && onGameUpdate) {
 			onGameUpdate(squares, xIsNext ? "O" : "X");
 		}
 	};
