@@ -167,7 +167,7 @@ export default function LobbyPage() {
 					<div className="space-y-3">
 						{game.players.map((player, index) => (
 							<div
-								key={player.id}
+								key={player.id + '-' + index}
 								className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-md"
 							>
 								<div className="flex items-center">
