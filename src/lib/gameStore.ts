@@ -1,20 +1,38 @@
 import { Game } from "@/types/game";
-import * as sqliteGameStore from './sqliteGameStore';
+import * as sqliteGameStore from "./sqliteGameStore";
+import * as tursoGameStore from "./tursoGameStore";
 
-export function getGames(): Game[] {
-  return sqliteGameStore.getGames();
+// Toggle this constant to switch between Turso and local SQLite
+export const USE_TURSO_DB = process.env.USE_TURSO_DB === "true";
+
+export async function getGames(): Promise<Game[]> {
+	if (USE_TURSO_DB) {
+		return await tursoGameStore.getGames();
+	} else {
+		return sqliteGameStore.getGames();
+	}
 }
 
-export function getGame(gameCode: string): Game | undefined {
-  return sqliteGameStore.getGame(gameCode);
+export async function getGame(gameCode: string): Promise<Game | undefined> {
+	if (USE_TURSO_DB) {
+		return await tursoGameStore.getGame(gameCode);
+	} else {
+		return sqliteGameStore.getGame(gameCode);
+	}
 }
 
-export function setGame(gameCode: string, game: Game): void {
-  // gameCode is already part of the Game object
-  sqliteGameStore.saveGame(game);
+export async function setGame(gameCode: string, game: Game): Promise<void> {
+	if (USE_TURSO_DB) {
+		await tursoGameStore.saveGame(game);
+	} else {
+		sqliteGameStore.saveGame(game);
+	}
 }
 
-export function deleteGame(gameCode: string): void {
-  sqliteGameStore.deleteGame(gameCode);
+export async function deleteGame(gameCode: string): Promise<void> {
+	if (USE_TURSO_DB) {
+		await tursoGameStore.deleteGame(gameCode);
+	} else {
+		sqliteGameStore.deleteGame(gameCode);
+	}
 }
-

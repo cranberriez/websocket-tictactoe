@@ -7,7 +7,7 @@ export async function POST(request: Request) {
 	try {
 		const { playerName, playerId, gameCode } = await request.json();
 
-		const game = getGame(gameCode);
+		const game = await getGame(gameCode);
 		// Check if the game exists
 		if (!game) {
 			console.error(`[JOIN] Game not found. gameCode: ${gameCode}, playerId: ${playerId}`);
@@ -15,7 +15,7 @@ export async function POST(request: Request) {
 		}
 
 		// Always fetch the latest game from the DB (in case of race conditions)
-		const latestGame = getGame(gameCode);
+		const latestGame = await getGame(gameCode);
 		if (!latestGame) {
 			console.error(
 				`[JOIN] Latest game not found. gameCode: ${gameCode}, playerId: ${playerId}`

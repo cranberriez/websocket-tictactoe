@@ -11,7 +11,7 @@ export async function POST(
 		const { gameCode } = await params;
 
 		// Get the game from the centralized store
-		const game = getGame(gameCode);
+		const game = await getGame(gameCode);
 
 		// Check if the game exists
 		if (!game) {
@@ -55,7 +55,7 @@ export async function POST(
 		game.winner = null;
 
 		console.log("[START] Full game state:", JSON.stringify(game, null, 2));
-		setGame(gameCode, game);
+		await setGame(gameCode, game);
 
 		// Trigger a Pusher event to notify all players that the game has started
 		await pusher.trigger(`game-${gameCode}`, "game-started", {

@@ -7,7 +7,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ game
 		const { gameCode } = await params;
 
 		// Get the game from the centralized store
-		const game = getGame(gameCode);
+		const game = await getGame(gameCode);
 
 		// Check if the game exists
 		if (!game) {

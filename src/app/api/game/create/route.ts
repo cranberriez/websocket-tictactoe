@@ -20,7 +20,7 @@ export async function POST(request: Request) {
 
 		// Generate a unique game code
 		let gameCode = generateGameCode();
-		const games = getGames();
+		const games = await getGames();
 		while (games.some((g) => g.gameCode === gameCode)) {
 			console.warn(`[CREATE] Collision on gameCode: ${gameCode}, regenerating...`);
 			gameCode = generateGameCode();

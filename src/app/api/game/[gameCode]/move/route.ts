@@ -43,7 +43,7 @@ export async function POST(
 		console.log("[MOVE] Parsed body", { playerId, position });
 
 		// Get the game from the centralized store
-		const game = getGame(gameCode);
+		const game = await getGame(gameCode);
 		console.log("[MOVE] Loaded game from store", { gameCode, game });
 
 		// Check if the game exists
