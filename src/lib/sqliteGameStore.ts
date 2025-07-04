@@ -41,31 +41,60 @@ export function saveGame(game: Game) {
 		`INSERT INTO players (id, gameCode, name, role, wins, symbol) VALUES (?, ?, ?, ?, ?, ?)`
 	);
 	for (const player of Object.values(game.players)) {
-		insertPlayer.run(player.id, game.gameCode, player.name, player.role, player.wins, player.symbol);
+		insertPlayer.run(
+			player.id,
+			game.gameCode,
+			player.name,
+			player.role,
+			player.wins,
+			player.symbol
+		);
 	}
 }
 
+interface GameRow {
+	gameCode: string;
+	status: string;
+	board: string;
+	currentTurn: string | null;
+	winner: string | null;
+}
+
+interface PlayerRow {
+	id: string;
+	gameCode: string;
+	name: string;
+	role: string;
+	wins: number;
+	symbol: string;
+}
+
 export function getGame(gameCode: string): Game | undefined {
-	const gameRow = db.prepare(`SELECT * FROM games WHERE gameCode = ?`).get(gameCode);
+	const gameRow = db.prepare(`SELECT * FROM games WHERE gameCode = ?`).get(gameCode) as
+		| GameRow
+		| undefined;
 	if (!gameRow) return undefined;
-	const playerRows = db.prepare(`SELECT * FROM players WHERE gameCode = ?`).all(gameCode);
+	const playerRows = db
+		.prepare(`SELECT * FROM players WHERE gameCode = ?`)
+		.all(gameCode) as PlayerRow[];
 	return {
 		gameCode: gameRow.gameCode,
-		status: gameRow.status,
+		status: gameRow.status as Game["status"],
 		board: JSON.parse(gameRow.board),
 		currentTurn: gameRow.currentTurn,
 		winner: gameRow.winner,
-		players: Object.fromEntries(playerRows.map((row: any) => [
-			row.id,
-			{
-				id: row.id,
-				name: row.name,
-				role: row.role,
-				wins: row.wins,
-				symbol: row.symbol,
-			},
-		])),
-
+		players: Object.fromEntries(
+			playerRows.map((row: PlayerRow) => [
+				row.id,
+				{
+					id: row.id,
+					name: row.name,
+					role: row.role,
+					wins: row.wins,
+					symbol: row.symbol,
+				},
+			])
+		) as Game["players"],
 	};
 }
 
@@ -86,17 +115,18 @@ export function getGames(): Game[] {
 			board: JSON.parse(gameRow.board),
 			currentTurn: gameRow.currentTurn,
 			winner: gameRow.winner,
-			players: Object.fromEntries(playerRows.map((row: any) => [
-				row.id,
-				{
-					id: row.id,
-					name: row.name,
-					role: row.role,
-					wins: row.wins,
-					symbol: row.symbol,
-				},
-			])),
-
+			players: Object.fromEntries(
+				playerRows.map((row: any) => [
+					row.id,
+					{
+						id: row.id,
+						name: row.name,
+						role: row.role,
+						wins: row.wins,
+						symbol: row.symbol,
+					},
+				])
+			),
 		};
 	});
 }
