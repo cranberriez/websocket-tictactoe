@@ -8,6 +8,8 @@ export default function Home() {
 	const [playerName, setPlayerName] = useState("Player");
 	const [joinCode, setJoinCode] = useState("");
 	const [showJoinInput, setShowJoinInput] = useState(false);
+	const [createLoading, setCreateLoading] = useState(false);
+	const [joinLoading, setJoinLoading] = useState(false);
 	const router = useRouter();
 
 	// TODO: remove later
@@ -19,6 +21,7 @@ export default function Home() {
 	const playerId = ensurePlayerId();
 
 	const handleCreateGame = async () => {
+		setCreateLoading(true);
 		try {
 			const response = await fetch("/api/game/create", {
 				method: "POST",
@@ -36,10 +39,13 @@ export default function Home() {
 			router.push(`/room/${data.gameCode}`);
 		} catch (error) {
 			console.error("Error creating game:", error);
+		} finally {
+			setCreateLoading(false);
 		}
 	};
 
 	const handleJoinGame = async () => {
+		setJoinLoading(true);
 		if (!joinCode) return;
 
 		try {
@@ -58,6 +64,8 @@ export default function Home() {
 			router.push(`/room/${joinCode}`);
 		} catch (error) {
 			console.error("Error joining game:", error);
+		} finally {
+			setJoinLoading(false);
 		}
 	};
 
@@ -106,8 +114,9 @@ export default function Home() {
 							<button
 								onClick={handleJoinGame}
 								className="px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:bg-blue-700 dark:hover:bg-blue-800"
+								disabled={joinLoading}
 							>
-								Join
+								{joinLoading ? "Joining..." : "Join"}
 							</button>
 						</div>
 						<button
@@ -122,8 +131,9 @@ export default function Home() {
 						<button
 							onClick={handleCreateGame}
 							className="w-full px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:bg-blue-700 dark:hover:bg-blue-800"
+							disabled={createLoading}
 						>
-							Create Game
+							{createLoading ? "Creating..." : "Create Game"}
 						</button>
 						<button
 							onClick={() => setShowJoinInput(true)}
