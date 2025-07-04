@@ -10,6 +10,17 @@ export default function Home() {
   const [showJoinInput, setShowJoinInput] = useState(false);
   const router = useRouter();
 
+  // Generate and persist playerId
+  let playerId = typeof window !== 'undefined' ? localStorage.getItem("playerId") : null;
+  if (!playerId && typeof window !== 'undefined') {
+    if ('randomUUID' in crypto) {
+      playerId = crypto.randomUUID();
+    } else {
+      playerId = Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
+    }
+    localStorage.setItem("playerId", playerId);
+  }
+
   const handleCreateGame = async () => {
     try {
       const response = await fetch('/api/game/create', {
@@ -17,7 +28,7 @@ export default function Home() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ playerName }),
+        body: JSON.stringify({ playerName, playerId }),
       });
 
       if (!response.ok) {
@@ -40,7 +51,7 @@ export default function Home() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ playerName, gameCode: joinCode }),
+        body: JSON.stringify({ playerName, playerId, gameCode: joinCode }),
       });
 
       if (!response.ok) {

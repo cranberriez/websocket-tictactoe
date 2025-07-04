@@ -15,22 +15,26 @@ function generateGameCode(): string {
 
 export async function POST(request: Request) {
 	try {
-		const { playerName } = await request.json();
+		const { playerName, playerId } = await request.json();
+		console.log('[CREATE] Received request:', { playerName, playerId });
 
 		// Generate a unique game code
 		let gameCode = generateGameCode();
 		const games = getGames();
 		while (games.has(gameCode)) {
+			console.warn(`[CREATE] Collision on gameCode: ${gameCode}, regenerating...`);
 			gameCode = generateGameCode();
 		}
+		console.log(`[CREATE] Using gameCode: ${gameCode}`);
 
 		// Create a new game with the host player
 		const hostPlayer: Player = {
-			id: Date.now().toString(), // Simple ID for demo purposes
+			id: playerId,
 			name: playerName,
 			role: "host",
 			wins: 0,
 		};
+		console.log('[CREATE] Host player:', hostPlayer);
 
 		const game: Game = {
 			gameCode,
@@ -40,19 +44,22 @@ export async function POST(request: Request) {
 			currentTurn: null,
 			winner: null,
 		};
+		console.log('[CREATE] Game object:', game);
 
 		// Store the game
 		setGame(gameCode, game);
+		console.log(`[CREATE] Game stored for code: ${gameCode}`);
 
 		// Trigger a Pusher event to create the game channel
 		await pusher.trigger(`game-${gameCode}`, "game-created", {
 			gameCode,
 			host: game.players[0],
 		});
+		console.log(`[CREATE] Pusher event triggered for gameCode: ${gameCode}`);
 
 		return NextResponse.json({ gameCode, game });
 	} catch (error) {
-		console.error("Error creating game:", error);
+		console.error("[CREATE] Error creating game:", error);
 		return NextResponse.json({ error: "Failed to create game" }, { status: 500 });
 	}
 }

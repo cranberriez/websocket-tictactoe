@@ -5,7 +5,7 @@ import { Player } from "@/types/game";
 
 export async function POST(request: Request) {
 	try {
-		const { playerName, gameCode } = await request.json();
+		const { playerName, playerId, gameCode } = await request.json();
 
 		const game = getGame(gameCode);
 		// Check if the game exists
@@ -20,7 +20,7 @@ export async function POST(request: Request) {
 
 		// Add the player to the game
 		const newPlayer: Player = {
-			id: Date.now().toString(), // Simple ID for demo purposes
+			id: playerId,
 			name: playerName,
 			role: "guest",
 			wins: 0,
