@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { getPlayerId, ensurePlayerId } from "@/lib/playerId";
 import { useParams, useRouter } from "next/navigation";
 import { pusherClient } from "@/lib/pusher";
 import { Game, Player } from "@/types/game";
@@ -17,8 +18,8 @@ export default function GamePage() {
 	const [gameResult, setGameResult] = useState<string | null>(null);
 
 	useEffect(() => {
-		// Get the player ID from localStorage
-		const storedPlayerId = localStorage.getItem("playerId");
+		// Get the player ID from utility
+		const storedPlayerId = getPlayerId();
 		if (storedPlayerId) {
 			setPlayerId(storedPlayerId);
 		}
@@ -104,7 +105,8 @@ export default function GamePage() {
 
 	const handleRestartGame = async () => {
 		// Only the host can restart the game
-		const isHost = game?.players[playerId as string]?.role === "host";
+		const myPlayerId = getPlayerId();
+		const isHost = game?.players[myPlayerId as string]?.role === "host";
 		if (!isHost) return;
 
 		try {

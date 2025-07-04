@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import { getPlayerId, setPlayerId, ensurePlayerId } from "@/lib/playerId";
 import { useRouter } from "next/navigation";
 
 export default function Home() {
@@ -11,15 +12,7 @@ export default function Home() {
 	const router = useRouter();
 
 	// Generate and persist playerId
-	let playerId = typeof window !== "undefined" ? localStorage.getItem("playerId") : null;
-	if (!playerId && typeof window !== "undefined") {
-		if ("randomUUID" in crypto) {
-			playerId = crypto.randomUUID();
-		} else {
-			playerId = Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
-		}
-		localStorage.setItem("playerId", playerId);
-	}
+	const playerId = ensurePlayerId();
 
 	const handleCreateGame = async () => {
 		try {
