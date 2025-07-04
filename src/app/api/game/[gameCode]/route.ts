@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { getGame } from "@/lib/gameStore";
-import { Game } from "@/types/game";
 
 export async function GET(request: Request, { params }: { params: Promise<{ gameCode: string }> }) {
 	try {
