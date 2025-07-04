@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { pusher } from "@/lib/pusher";
 import { getGame, setGame } from "@/lib/gameStore";
-import { Player, Game } from "@/types/game";
 
 // Check for a winner
 function checkWinner(board: (string | null)[]): string | null {
@@ -31,17 +30,20 @@ function isBoardFull(board: (string | null)[]): boolean {
 	return board.every((cell) => cell !== null);
 }
 
-export async function POST(request: Request, { params }: { params: { gameCode: string } }) {
+export async function POST(
+	request: Request,
+	{ params }: { params: Promise<{ gameCode: string }> }
+) {
 	console.log("[MOVE] Incoming move request", { params });
 	try {
 		// Await params to fix the dynamic route parameter bug
-		const { gameCode } = await Promise.resolve(params);
+		const { gameCode } = await params;
 		const body = await request.json();
 		const { playerId, position } = body;
 		console.log("[MOVE] Parsed body", { playerId, position });
 
 		// Get the game from the centralized store
-		let game = getGame(gameCode);
+		const game = getGame(gameCode);
 		console.log("[MOVE] Loaded game from store", { gameCode, game });
 
 		// Check if the game exists

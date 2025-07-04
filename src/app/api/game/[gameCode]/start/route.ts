@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import { pusher } from "@/lib/pusher";
 import { getGame, setGame } from "@/lib/gameStore";
-import { Game } from "@/types/game";
 
-export async function POST(request: Request, { params }: { params: { gameCode: string } }) {
+export async function POST(
+	request: Request,
+	{ params }: { params: Promise<{ gameCode: string }> }
+) {
 	try {
 		// Await params to fix the dynamic route parameter bug
-		const { gameCode } = await Promise.resolve(params);
+		const { gameCode } = await params;
 
 		// Get the game from the centralized store
 		const game = getGame(gameCode);
@@ -41,7 +43,12 @@ export async function POST(request: Request, { params }: { params: { gameCode: s
 		console.log("[START] Available player IDs:", playerIds);
 		const startingPlayerId = playerIds[Math.floor(Math.random() * playerIds.length)];
 		game.currentTurn = startingPlayerId;
-		console.log("[START] currentTurn set to:", game.currentTurn, "player:", game.players[startingPlayerId]);
+		console.log(
+			"[START] currentTurn set to:",
+			game.currentTurn,
+			"player:",
+			game.players[startingPlayerId]
+		);
 
 		// Reset the board
 		game.board = Array(9).fill(null);

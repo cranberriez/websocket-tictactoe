@@ -11,7 +11,7 @@ export default function GameNotFound() {
 					Game Not Found
 				</h1>
 				<p className="text-gray-700 dark:text-gray-300 mb-6">
-					The game you're looking for doesn't exist or has expired.
+					The game you&apos;re looking for doesn&apos;t exist or has expired.
 				</p>
 				<button
 					onClick={() => router.push("/")}

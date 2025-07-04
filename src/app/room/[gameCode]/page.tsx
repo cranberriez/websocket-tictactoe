@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { pusherClient } from "@/lib/pusher";
-import { getPlayerId, ensurePlayerId } from "@/lib/playerId";
+import { ensurePlayerId } from "@/lib/playerId";
 import { Game, Player } from "@/types/game";
 import GameLoading from "@/components/GameLoading";
 import GameError from "@/components/GameError";
@@ -44,6 +44,7 @@ export default function RoomPage() {
 				}
 			} catch (error) {
 				setError("Game not found or has expired");
+				console.error(error);
 			} finally {
 				setIsLoading(false);
 			}
@@ -97,6 +98,7 @@ export default function RoomPage() {
 			const response = await fetch(`/api/game/${gameCode}/start`, { method: "POST" });
 			if (!response.ok) throw new Error("Failed to start game");
 		} catch (error) {
+			console.error("Error starting game:", error);
 			setError("Failed to start game");
 		}
 	};
@@ -111,6 +113,7 @@ export default function RoomPage() {
 			});
 			if (!response.ok) throw new Error("Failed to make move");
 		} catch (error) {
+			console.error("Error making move:", error);
 			setError("Failed to make move");
 		}
 	};
@@ -121,12 +124,12 @@ export default function RoomPage() {
 			const response = await fetch(`/api/game/${gameCode}/restart`, { method: "POST" });
 			if (!response.ok) throw new Error("Failed to restart game");
 		} catch (error) {
+			console.error("Error restarting game:", error);
 			setError("Failed to restart game");
 		}
 	};
 
 	// Derived values
-	const currentPlayer: Player | undefined = playerId && game ? game.players[playerId] : undefined;
 	const opponent: Player | undefined = game
 		? Object.values(game.players as { [id: string]: Player }).find(
 				(p: Player) => p.id !== playerId
