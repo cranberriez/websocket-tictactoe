@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
-import { getPlayerId, setPlayerId, ensurePlayerId } from "@/lib/playerId";
+import { getPlayerId, setPlayerId, ensurePlayerId, clearPlayerId } from "@/lib/playerId";
 import { useRouter } from "next/navigation";
 
 export default function Home() {
@@ -10,6 +10,11 @@ export default function Home() {
 	const [joinCode, setJoinCode] = useState("");
 	const [showJoinInput, setShowJoinInput] = useState(false);
 	const router = useRouter();
+
+	// TODO: remove later
+	if (typeof window !== "undefined") {
+		clearPlayerId();
+	}
 
 	// Generate and persist playerId
 	const playerId = ensurePlayerId();

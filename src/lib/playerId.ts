@@ -28,3 +28,9 @@ export function ensurePlayerId(): string {
 	console.log("[ENSURE] Player ID:", playerId);
 	return playerId;
 }
+
+export function clearPlayerId(): void {
+	if (typeof window === "undefined") return;
+	localStorage.removeItem("playerId");
+	console.log("[CLEAR] Player ID");
+}

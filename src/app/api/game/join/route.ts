@@ -10,22 +10,34 @@ export async function POST(request: Request) {
 		const game = getGame(gameCode);
 		// Check if the game exists
 		if (!game) {
+			console.error(`[JOIN] Game not found. gameCode: ${gameCode}, playerId: ${playerId}`);
 			return NextResponse.json({ error: "Game not found" }, { status: 404 });
 		}
 
 		// Always fetch the latest game from the DB (in case of race conditions)
 		const latestGame = getGame(gameCode);
 		if (!latestGame) {
+			console.error(
+				`[JOIN] Latest game not found. gameCode: ${gameCode}, playerId: ${playerId}`
+			);
 			return NextResponse.json({ error: "Game not found" }, { status: 404 });
 		}
 
 		// Check if the player is already in the game
 		if (latestGame.players[playerId]) {
+			console.error(
+				`[JOIN] Player already joined. gameCode: ${gameCode}, playerId: ${playerId}, players:`,
+				latestGame.players
+			);
 			return NextResponse.json({ error: "Player already joined" }, { status: 400 });
 		}
 
 		// If the game is full and player is not in it, return room full error
 		if (Object.keys(latestGame.players).length >= 2) {
+			console.error(
+				`[JOIN] Game is already full. gameCode: ${gameCode}, playerId: ${playerId}, players:`,
+				latestGame.players
+			);
 			return NextResponse.json({ error: "Game is already full" }, { status: 400 });
 		}
 
