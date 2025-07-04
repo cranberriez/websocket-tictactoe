@@ -28,6 +28,8 @@ export async function POST(
     game.status = 'playing';
     setGame(gameCode, game);
     
+    // Sort players by id for consistent ordering across clients
+    game.players.sort((a, b) => a.id.localeCompare(b.id));
     // Randomly decide who goes first
     const firstPlayerIndex = Math.floor(Math.random() * 2);
     game.currentTurn = game.players[firstPlayerIndex].id;
