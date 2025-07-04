@@ -3,22 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { pusherClient } from "@/lib/pusher";
-
-interface Player {
-	id: string;
-	name: string;
-	role: "host" | "guest";
-	wins: number;
-}
-
-interface Game {
-	gameCode: string;
-	players: Player[];
-	status: "waiting" | "playing" | "finished";
-	board: (string | null)[];
-	currentTurn: string | null;
-	winner: string | null;
-}
+import { Game, Player } from "@/types/game";
 
 export default function LobbyPage() {
 	const params = useParams();

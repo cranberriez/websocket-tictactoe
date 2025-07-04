@@ -1,13 +1,7 @@
 import { NextResponse } from "next/server";
 import { pusher } from "@/lib/pusher";
-import { games } from "../../create/route";
-
-interface Player {
-	id: string;
-	name: string;
-	role: "host" | "guest";
-	wins: number;
-}
+import { getGame, setGame } from "@/lib/gameStore";
+import { Player, Game } from "@/types/game";
 
 // Check for a winner
 function checkWinner(board: (string | null)[]): string | null {
@@ -39,15 +33,17 @@ function isBoardFull(board: (string | null)[]): boolean {
 
 export async function POST(request: Request, { params }: { params: { gameCode: string } }) {
 	try {
-		const gameCode = params.gameCode;
+		// Await params to fix the dynamic route parameter bug
+		const { gameCode } = await Promise.resolve(params);
 		const { playerId, position } = await request.json();
 
-		// Check if the game exists
-		if (!games.has(gameCode)) {
-			return NextResponse.json({ error: "Game not found" }, { status: 404 });
-		}
+		// Get the game from the centralized store
+		let game = getGame(gameCode);
 
-		const game = games.get(gameCode);
+		// Check if the game exists
+		if (!game) {
+			return NextResponse.json({ error: 'Game not found' }, { status: 404 });
+		}
 
 		// Check if the game is in progress
 		if (game.status !== "playing") {
@@ -91,6 +87,9 @@ export async function POST(request: Request, { params }: { params: { gameCode: s
 			const nextPlayerIndex = (playerIndex + 1) % 2;
 			game.currentTurn = game.players[nextPlayerIndex].id;
 		}
+
+		// Update the game in the centralized store
+		setGame(gameCode, game);
 
 		// Trigger a Pusher event to notify all players of the move
 		await pusher.trigger(`game-${gameCode}`, "move-made", {

@@ -1,28 +1,32 @@
 import { NextResponse } from 'next/server';
 import { pusher } from '@/lib/pusher';
-import { games } from '../../create/route';
+import { getGame, setGame } from '@/lib/gameStore';
+import { Game } from '@/types/game';
 
 export async function POST(
   request: Request,
   { params }: { params: { gameCode: string } }
 ) {
   try {
-    const gameCode = params.gameCode;
+    // Await params to fix the dynamic route parameter bug
+    const { gameCode } = await Promise.resolve(params);
+    
+    // Get the game from the centralized store
+    const game = getGame(gameCode);
     
     // Check if the game exists
-    if (!games.has(gameCode)) {
+    if (!game) {
       return NextResponse.json({ error: 'Game not found' }, { status: 404 });
     }
-    
-    const game = games.get(gameCode);
     
     // Check if there are 2 players
     if (game.players.length < 2) {
       return NextResponse.json({ error: 'Need 2 players to start the game' }, { status: 400 });
     }
     
-    // Update game status
+    // Update the game state in the centralized store
     game.status = 'playing';
+    setGame(gameCode, game);
     
     // Randomly decide who goes first
     const firstPlayerIndex = Math.floor(Math.random() * 2);
