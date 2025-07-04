@@ -5,6 +5,9 @@ import { getPlayerId, ensurePlayerId } from "@/lib/playerId";
 import { useParams, useRouter } from "next/navigation";
 import { pusherClient } from "@/lib/pusher";
 import { Game, Player } from "@/types/game";
+import GameLoading from "@/components/GameLoading";
+import GameError from "@/components/GameError";
+import GameNotFound from "@/components/GameNotFound";
 
 export default function GamePage() {
 	const params = useParams();
@@ -132,54 +135,15 @@ export default function GamePage() {
 	};
 
 	if (isLoading) {
-		return (
-			<div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
-				<div className="text-center">
-					<div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent"></div>
-					<p className="mt-4 text-gray-700 dark:text-gray-300">Loading game...</p>
-				</div>
-			</div>
-		);
+		return <GameLoading />;
 	}
 
 	if (error) {
-		return (
-			<div className="flex flex-col items-center justify-center min-h-screen p-8 bg-gray-50 dark:bg-gray-900">
-				<div className="w-full max-w-md p-8 bg-white dark:bg-gray-800 rounded-lg shadow-md text-center">
-					<h1 className="text-2xl font-bold text-red-600 dark:text-red-400 mb-4">
-						Error
-					</h1>
-					<p className="text-gray-700 dark:text-gray-300 mb-6">{error}</p>
-					<button
-						onClick={() => router.push("/")}
-						className="px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:bg-blue-700 dark:hover:bg-blue-800"
-					>
-						Back to Home
-					</button>
-				</div>
-			</div>
-		);
+		return <GameError error={error} />;
 	}
 
 	if (!game) {
-		return (
-			<div className="flex flex-col items-center justify-center min-h-screen p-8 bg-gray-50 dark:bg-gray-900">
-				<div className="w-full max-w-md p-8 bg-white dark:bg-gray-800 rounded-lg shadow-md text-center">
-					<h1 className="text-2xl font-bold text-red-600 dark:text-red-400 mb-4">
-						Game Not Found
-					</h1>
-					<p className="text-gray-700 dark:text-gray-300 mb-6">
-						The game you're looking for doesn't exist or has expired.
-					</p>
-					<button
-						onClick={() => router.push("/")}
-						className="px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:bg-blue-700 dark:hover:bg-blue-800"
-					>
-						Back to Home
-					</button>
-				</div>
-			</div>
-		);
+		return <GameNotFound />;
 	}
 
 	// Use player object for lookup
@@ -189,7 +153,7 @@ export default function GamePage() {
 	).find((p: Player) => p.id !== playerId);
 	const isMyTurn = game.currentTurn === playerId;
 	const isHost = currentPlayer?.role === "host";
-	
+
 	// Debug logging for turn state
 	console.log("[GAME] Turn state:", {
 		myPlayerId: playerId,
@@ -197,7 +161,7 @@ export default function GamePage() {
 		isMyTurn,
 		players: game.players,
 		currentPlayer,
-		opponent
+		opponent,
 	});
 
 	// Use assigned symbols
