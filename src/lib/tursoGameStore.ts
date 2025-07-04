@@ -1,17 +1,44 @@
 import { createClient, Client } from "@libsql/client";
 import { Game } from "@/types/game";
 
-const tursoUrl = process.env.TURSO_DATABASE_URL!;
-const tursoAuthToken = process.env.TURSO_AUTH_TOKEN!;
+// Helper function to get client with proper error handling
+function getTursoClient(): Client {
+	const tursoUrl = process.env.TURSO_DATABASE_URL;
+	const tursoAuthToken = process.env.TURSO_AUTH_TOKEN;
 
-const client: Client = createClient({
-	url: tursoUrl,
-	authToken: tursoAuthToken,
-});
+	if (!tursoUrl) {
+		console.error("[TURSO] Error: TURSO_DATABASE_URL environment variable is not set");
+		throw new Error("Database URL not configured");
+	}
+
+	if (!tursoAuthToken) {
+		console.error("[TURSO] Error: TURSO_AUTH_TOKEN environment variable is not set");
+		throw new Error("Database auth token not configured");
+	}
+
+	return createClient({
+		url: tursoUrl,
+		authToken: tursoAuthToken,
+		// Add explicit configuration for HTTP-only mode if needed for serverless
+		// httpMode: 'js-fetch',
+	});
+}
+
+// Create client lazily per request instead of at module scope
+let client: Client | null = null;
+
+// Get or create client
+function getClient(): Client {
+	if (!client) {
+		client = getTursoClient();
+	}
+	return client;
+}
 
 // --- Turso DB schema initialization ---
 async function initTursoSchema() {
-	await client.execute(`
+	const db = getClient();
+	await db.execute(`
 		CREATE TABLE IF NOT EXISTS games (
 			gameCode TEXT PRIMARY KEY,
 			status TEXT,
@@ -20,7 +47,7 @@ async function initTursoSchema() {
 			winner TEXT
 		);
 	`);
-	await client.execute(`
+	await db.execute(`
 		CREATE TABLE IF NOT EXISTS players (
 			id TEXT,
 			gameCode TEXT,
@@ -58,17 +85,18 @@ async function withTursoSchemaRetry<T>(fn: () => Promise<T>): Promise<T> {
 // Utility functions for Turso DB (libsql)
 export async function saveGame(game: Game) {
 	console.log("[TURSO] Saving game:", game);
-	await client.execute(
+	const db = getClient();
+	await db.execute(
 		`INSERT OR REPLACE INTO games (gameCode, status, board, currentTurn, winner) VALUES (?, ?, ?, ?, ?)`,
 		[game.gameCode, game.status, JSON.stringify(game.board), game.currentTurn, game.winner]
 	);
 	console.log("[TURSO] Saved game row for", game.gameCode);
 
 	// Remove all players for this game and re-insert
-	await client.execute(`DELETE FROM players WHERE gameCode = ?`, [game.gameCode]);
+	await db.execute(`DELETE FROM players WHERE gameCode = ?`, [game.gameCode]);
 	console.log("[TURSO] Deleted old players for", game.gameCode);
 	for (const player of Object.values(game.players)) {
-		await client.execute(
+		await db.execute(
 			`INSERT INTO players (id, gameCode, name, role, wins, symbol) VALUES (?, ?, ?, ?, ?, ?)`,
 			[player.id, game.gameCode, player.name, player.role, player.wins, player.symbol]
 		);
@@ -80,7 +108,8 @@ export async function saveGame(game: Game) {
 export async function getGame(gameCode: string): Promise<Game | undefined> {
 	console.log("[TURSO] Fetching game:", gameCode);
 	return withTursoSchemaRetry(async () => {
-		const gameRes = await client.execute(`SELECT * FROM games WHERE gameCode = ?`, [gameCode]);
+		const db = getClient();
+		const gameRes = await db.execute(`SELECT * FROM games WHERE gameCode = ?`, [gameCode]);
 		console.log("[TURSO] Game query result:", gameRes.rows);
 		if (gameRes.rows.length === 0) {
 			console.warn("[TURSO] No game found for", gameCode);
@@ -88,9 +117,7 @@ export async function getGame(gameCode: string): Promise<Game | undefined> {
 		}
 		const gameRow = gameRes.rows[0];
 
-		const playersRes = await client.execute(`SELECT * FROM players WHERE gameCode = ?`, [
-			gameCode,
-		]);
+		const playersRes = await db.execute(`SELECT * FROM players WHERE gameCode = ?`, [gameCode]);
 		console.log("[TURSO] Players query result:", playersRes.rows);
 		const players: Record<string, any> = {};
 		for (const row of playersRes.rows) {
@@ -122,17 +149,19 @@ export async function getGame(gameCode: string): Promise<Game | undefined> {
 
 export async function deleteGame(gameCode: string) {
 	return withTursoSchemaRetry(async () => {
-		await client.execute(`DELETE FROM games WHERE gameCode = ?`, [gameCode]);
-		await client.execute(`DELETE FROM players WHERE gameCode = ?`, [gameCode]);
+		const db = getClient();
+		await db.execute(`DELETE FROM games WHERE gameCode = ?`, [gameCode]);
+		await db.execute(`DELETE FROM players WHERE gameCode = ?`, [gameCode]);
 	});
 }
 
 export async function getGames(): Promise<Game[]> {
 	return withTursoSchemaRetry(async () => {
-		const gamesRes = await client.execute(`SELECT * FROM games`, []);
+		const db = getClient();
+		const gamesRes = await db.execute(`SELECT * FROM games`, []);
 		const games: Game[] = [];
 		for (const gameRow of gamesRes.rows) {
-			const playersRes = await client.execute(`SELECT * FROM players WHERE gameCode = ?`, [
+			const playersRes = await db.execute(`SELECT * FROM players WHERE gameCode = ?`, [
 				typeof gameRow.gameCode === "string"
 					? gameRow.gameCode
 					: String(gameRow.gameCode ?? ""),
