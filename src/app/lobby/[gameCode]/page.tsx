@@ -34,7 +34,9 @@ export default function LobbyPage() {
 				const playerId = localStorage.getItem("playerId");
 				if (
 					playerId &&
-					data.game.players.some((p: Player) => p.id === playerId && p.role === "host")
+					(Object.values(data.game.players) as Player[]).some(
+						(p) => p.id === playerId && p.role === "host"
+					)
 				) {
 					setIsHost(true);
 				}
@@ -51,15 +53,18 @@ export default function LobbyPage() {
 		// Subscribe to Pusher channel for real-time updates
 		const channel = pusherClient.subscribe(`game-${gameCode}`);
 
-		channel.bind("player-joined", (data: { player: Player; players: Player[] }) => {
-			setGame((prevGame) => {
-				if (!prevGame) return null;
-				return {
-					...prevGame,
-					players: data.players,
-				};
-			});
-		});
+		channel.bind(
+			"player-joined",
+			(data: { player: Player; players: { [id: string]: Player } }) => {
+				setGame((prevGame) => {
+					if (!prevGame) return null;
+					return {
+						...prevGame,
+						players: data.players,
+					};
+				});
+			}
+		);
 
 		channel.bind("game-started", (data: { game: Game }) => {
 			setGame(data.game);
@@ -165,14 +170,14 @@ export default function LobbyPage() {
 						Players
 					</h2>
 					<div className="space-y-3">
-						{game.players.map((player, index) => (
+						{Object.values(game.players).map((player: Player) => (
 							<div
-								key={player.id + '-' + index}
+								key={player.id}
 								className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-md"
 							>
 								<div className="flex items-center">
 									<div className="w-8 h-8 flex items-center justify-center bg-blue-600 text-white rounded-full mr-3">
-										{index === 0 ? "X" : "O"}
+										{player.symbol}
 									</div>
 									<div>
 										<p className="font-medium text-gray-800 dark:text-white">
@@ -195,7 +200,7 @@ export default function LobbyPage() {
 							</div>
 						))}
 
-						{game.players.length < 2 && (
+						{Object.values(game.players).length < 2 && (
 							<div className="flex items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-md border-2 border-dashed border-gray-300 dark:border-gray-600">
 								<div className="w-8 h-8 flex items-center justify-center bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 rounded-full mr-3">
 									?
@@ -211,20 +216,22 @@ export default function LobbyPage() {
 				{isHost && (
 					<button
 						onClick={handleStartGame}
-						disabled={game.players.length < 2}
+						disabled={Object.values(game.players).length < 2}
 						className={`w-full px-4 py-3 font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-							game.players.length < 2
+							Object.values(game.players).length < 2
 								? "bg-gray-300 text-gray-500 cursor-not-allowed dark:bg-gray-700 dark:text-gray-400"
 								: "bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500 dark:bg-blue-700 dark:hover:bg-blue-800"
 						}`}
 					>
-						{game.players.length < 2 ? "Waiting for opponent..." : "Start Game"}
+						{Object.values(game.players).length < 2
+							? "Waiting for opponent..."
+							: "Start Game"}
 					</button>
 				)}
 
 				{!isHost && (
 					<div className="text-center text-gray-600 dark:text-gray-400">
-						{game.players.length < 2
+						{Object.values(game.players).length < 2
 							? "Waiting for another player to join..."
 							: "Waiting for host to start the game..."}
 					</div>

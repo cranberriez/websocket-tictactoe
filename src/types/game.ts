@@ -3,11 +3,12 @@ export interface Player {
   name: string;
   role: "host" | "guest";
   wins: number;
+  symbol: "X" | "O";
 }
 
 export interface Game {
   gameCode: string;
-  players: Player[];
+  players: { [playerId: string]: Player };
   status: "waiting" | "playing" | "finished";
   board: (string | null)[];
   currentTurn: string | null;

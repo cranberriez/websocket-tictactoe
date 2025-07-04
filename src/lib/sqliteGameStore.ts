@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS players (
   name TEXT,
   role TEXT,
   wins INTEGER,
+  symbol TEXT,
   PRIMARY KEY (id, gameCode),
   FOREIGN KEY (gameCode) REFERENCES games(gameCode)
 );
@@ -37,10 +38,10 @@ export function saveGame(game: Game) {
 	// Remove all players for this game and re-insert
 	db.prepare(`DELETE FROM players WHERE gameCode = ?`).run(game.gameCode);
 	const insertPlayer = db.prepare(
-		`INSERT INTO players (id, gameCode, name, role, wins) VALUES (?, ?, ?, ?, ?)`
+		`INSERT INTO players (id, gameCode, name, role, wins, symbol) VALUES (?, ?, ?, ?, ?, ?)`
 	);
-	for (const player of game.players) {
-		insertPlayer.run(player.id, game.gameCode, player.name, player.role, player.wins);
+	for (const player of Object.values(game.players)) {
+		insertPlayer.run(player.id, game.gameCode, player.name, player.role, player.wins, player.symbol);
 	}
 }
 
@@ -54,12 +55,17 @@ export function getGame(gameCode: string): Game | undefined {
 		board: JSON.parse(gameRow.board),
 		currentTurn: gameRow.currentTurn,
 		winner: gameRow.winner,
-		players: playerRows.map((row: any) => ({
-			id: row.id,
-			name: row.name,
-			role: row.role,
-			wins: row.wins,
-		})),
+		players: Object.fromEntries(playerRows.map((row: any) => [
+			row.id,
+			{
+				id: row.id,
+				name: row.name,
+				role: row.role,
+				wins: row.wins,
+				symbol: row.symbol,
+			},
+		])),
+
 	};
 }
 
@@ -80,12 +86,17 @@ export function getGames(): Game[] {
 			board: JSON.parse(gameRow.board),
 			currentTurn: gameRow.currentTurn,
 			winner: gameRow.winner,
-			players: playerRows.map((row: any) => ({
-				id: row.id,
-				name: row.name,
-				role: row.role,
-				wins: row.wins,
-			})),
+			players: Object.fromEntries(playerRows.map((row: any) => [
+				row.id,
+				{
+					id: row.id,
+					name: row.name,
+					role: row.role,
+					wins: row.wins,
+					symbol: row.symbol,
+				},
+			])),
+
 		};
 	});
 }

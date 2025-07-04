@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { pusherClient } from "@/lib/pusher";
-import { Game } from "@/types/game";
+import { Game, Player } from "@/types/game";
 
 export default function GamePage() {
 	const params = useParams();
@@ -53,7 +53,7 @@ export default function GamePage() {
 			// Check if the game is finished
 			if (data.game.status === "finished") {
 				if (data.game.winner) {
-					const winner = data.game.players.find((p) => p.id === data.game.winner);
+					const winner = data.game.players[playerId as string];
 					if (winner) {
 						setGameResult(`${winner.name} wins!`);
 					}
@@ -104,7 +104,7 @@ export default function GamePage() {
 
 	const handleRestartGame = async () => {
 		// Only the host can restart the game
-		const isHost = game?.players.some((p) => p.id === playerId && p.role === "host");
+		const isHost = game?.players[playerId as string]?.role === "host";
 		if (!isHost) return;
 
 		try {
@@ -174,15 +174,17 @@ export default function GamePage() {
 		);
 	}
 
-	// Find the current player and opponent
-	const currentPlayer = game.players.find((p) => p.id === playerId);
-	const opponent = game.players.find((p) => p.id !== playerId);
+	// Use player object for lookup
+	const currentPlayer: Player | undefined = playerId ? game.players[playerId] : undefined;
+	const opponent: Player | undefined = Object.values(
+		game.players as { [id: string]: Player }
+	).find((p: Player) => p.id !== playerId);
 	const isMyTurn = game.currentTurn === playerId;
 	const isHost = currentPlayer?.role === "host";
 
-	// Determine the symbols for each player (X for first player, O for second)
-	const playerSymbol = game.players[0]?.id === playerId ? "X" : "O";
-	const opponentSymbol = playerSymbol === "X" ? "O" : "X";
+	// Use assigned symbols
+	const playerSymbol = currentPlayer?.symbol;
+	const opponentSymbol = opponent?.symbol;
 
 	return (
 		<div className="flex flex-col items-center justify-center min-h-screen p-8 bg-gray-50 dark:bg-gray-900">

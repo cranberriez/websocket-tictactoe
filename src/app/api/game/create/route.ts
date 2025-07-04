@@ -33,12 +33,13 @@ export async function POST(request: Request) {
 			name: playerName,
 			role: "host",
 			wins: 0,
+			symbol: "X",
 		};
 		console.log("[CREATE] Host player:", hostPlayer);
 
 		const game: Game = {
 			gameCode,
-			players: [hostPlayer],
+			players: { [playerId]: hostPlayer },
 			status: "waiting", // waiting, playing, finished
 			board: Array(9).fill(null),
 			currentTurn: null,

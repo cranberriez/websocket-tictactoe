@@ -60,32 +60,28 @@ export async function POST(request: Request, { params }: { params: { gameCode: s
 			return NextResponse.json({ error: "Invalid move" }, { status: 400 });
 		}
 
-		// Find the player
-		const playerIndex = game.players.findIndex((p: Player) => p.id === playerId);
-		if (playerIndex === -1) {
-			return NextResponse.json({ error: "Player not found" }, { status: 400 });
-		}
-
 		// Make the move
-		game.board[position] = playerIndex === 0 ? "X" : "O";
+		game.board[position] = game.players[playerId]?.symbol || null;
 
 		// Check for a winner
-		const symbol = playerIndex === 0 ? "X" : "O";
 		const winningSymbol = checkWinner(game.board);
 
 		if (winningSymbol) {
 			// We have a winner
 			game.status = "finished";
 			game.winner = playerId;
-			game.players[playerIndex].wins += 1;
+			if (game.players[playerId]) {
+				game.players[playerId].wins += 1;
+			}
 		} else if (isBoardFull(game.board)) {
 			// It's a tie
 			game.status = "finished";
 			game.winner = null;
 		} else {
 			// Switch turns
-			const nextPlayerIndex = (playerIndex + 1) % 2;
-			game.currentTurn = game.players[nextPlayerIndex].id;
+			const playerIds = Object.keys(game.players);
+			const nextPlayerId = playerIds.find((id) => id !== playerId) || playerId;
+			game.currentTurn = nextPlayerId;
 		}
 
 		// Update the game in the centralized store

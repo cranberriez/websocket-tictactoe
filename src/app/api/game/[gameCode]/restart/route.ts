@@ -30,8 +30,9 @@ export async function POST(
     game.winner = null;
     
     // Randomly decide who goes first
-    const firstPlayerIndex = Math.floor(Math.random() * 2);
-    game.currentTurn = game.players[firstPlayerIndex].id;
+    const playerIds = Object.keys(game.players);
+    const firstPlayerId = playerIds[Math.floor(Math.random() * playerIds.length)];
+    game.currentTurn = firstPlayerId;
     
     // Trigger a Pusher event to notify all players that the game has been restarted
     await pusher.trigger(`game-${gameCode}`, 'game-restarted', {

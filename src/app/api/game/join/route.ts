@@ -20,26 +20,25 @@ export async function POST(request: Request) {
 		}
 
 		// Check if the player is already in the game
-		const existingPlayer = latestGame.players.find((p) => p.id === playerId);
-		if (existingPlayer) {
-			// Player is already in the game, return game info without adding again
-			return NextResponse.json({ success: true, game: latestGame });
+		if (latestGame.players[playerId]) {
+			return NextResponse.json({ error: "Player already joined" }, { status: 400 });
 		}
 
 		// If the game is full and player is not in it, return room full error
-		if (latestGame.players.length >= 2) {
+		if (Object.keys(latestGame.players).length >= 2) {
 			return NextResponse.json({ error: "Game is already full" }, { status: 400 });
 		}
 
-		// Add the player to the game
+		// Add the new player as guest with symbol 'O'
 		const newPlayer: Player = {
 			id: playerId,
 			name: playerName,
 			role: "guest",
 			wins: 0,
+			symbol: "O",
 		};
 
-		const updatedPlayers = [...latestGame.players, newPlayer];
+		const updatedPlayers = { ...latestGame.players, [playerId]: newPlayer };
 		const updatedGame = { ...latestGame, players: updatedPlayers };
 		setGame(gameCode, updatedGame);
 
