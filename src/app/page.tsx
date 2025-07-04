@@ -34,7 +34,7 @@ export default function Home() {
 			}
 
 			const data = await response.json();
-			router.push(`/lobby/${data.gameCode}`);
+			router.push(`/room/${data.gameCode}`);
 		} catch (error) {
 			console.error("Error creating game:", error);
 		}
@@ -56,7 +56,7 @@ export default function Home() {
 				throw new Error("Failed to join game");
 			}
 
-			router.push(`/lobby/${joinCode}`);
+			router.push(`/room/${joinCode}`);
 		} catch (error) {
 			console.error("Error joining game:", error);
 		}
