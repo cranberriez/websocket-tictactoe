@@ -18,11 +18,10 @@ export default function GamePage() {
 	const [gameResult, setGameResult] = useState<string | null>(null);
 
 	useEffect(() => {
-		// Get the player ID from utility
-		const storedPlayerId = getPlayerId();
-		if (storedPlayerId) {
-			setPlayerId(storedPlayerId);
-		}
+		// Get the player ID from utility - use ensurePlayerId to guarantee a consistent ID
+		const storedPlayerId = ensurePlayerId();
+		setPlayerId(storedPlayerId);
+		console.log("[GAME] Using player ID:", storedPlayerId);
 
 		// Fetch the game data when the component mounts
 		const fetchGame = async () => {
@@ -50,6 +49,7 @@ export default function GamePage() {
 
 		channel.bind("move-made", (data: { game: Game }) => {
 			setGame(data.game);
+			console.log("[GAME] Move made, updated game state:", data.game);
 
 			// Check if the game is finished
 			if (data.game.status === "finished") {
@@ -64,7 +64,13 @@ export default function GamePage() {
 			}
 		});
 
+		channel.bind("game-started", (data: { game: Game }) => {
+			console.log("[GAME] Game started event received:", data.game);
+			setGame(data.game);
+		});
+
 		channel.bind("game-restarted", (data: { game: Game }) => {
+			console.log("[GAME] Game restarted event received:", data.game);
 			setGame(data.game);
 			setGameResult(null);
 		});
@@ -183,6 +189,16 @@ export default function GamePage() {
 	).find((p: Player) => p.id !== playerId);
 	const isMyTurn = game.currentTurn === playerId;
 	const isHost = currentPlayer?.role === "host";
+	
+	// Debug logging for turn state
+	console.log("[GAME] Turn state:", {
+		myPlayerId: playerId,
+		currentTurn: game.currentTurn,
+		isMyTurn,
+		players: game.players,
+		currentPlayer,
+		opponent
+	});
 
 	// Use assigned symbols
 	const playerSymbol = currentPlayer?.symbol;

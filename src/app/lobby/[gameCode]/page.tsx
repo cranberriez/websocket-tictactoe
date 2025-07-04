@@ -32,7 +32,8 @@ export default function LobbyPage() {
 				// Check if the current user is the host
 				// In a real app, you'd use authentication to identify the user
 				// For this demo, we'll use localStorage to store the player ID
-				const playerId = getPlayerId();
+				const playerId = ensurePlayerId();
+				console.log("[LOBBY] Using player ID:", playerId);
 				if (
 					playerId &&
 					(Object.values(data.game.players) as Player[]).some(

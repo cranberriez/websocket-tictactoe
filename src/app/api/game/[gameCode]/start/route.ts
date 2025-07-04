@@ -39,9 +39,11 @@ export async function POST(request: Request, { params }: { params: { gameCode: s
 
 		// Randomly decide who goes first
 		const playerIds = Object.keys(game.players);
+		console.log("[START] Available player IDs:", playerIds);
 		const startingPlayerId = playerIds[Math.floor(Math.random() * playerIds.length)];
 		game.currentTurn = startingPlayerId;
 		console.log("[START] currentTurn set to:", game.currentTurn, "player:", game.players[startingPlayerId]);
+		console.log("[START] Full game state:", JSON.stringify(game, null, 2));
 
 		// Reset the board
 		game.board = Array(9).fill(null);
