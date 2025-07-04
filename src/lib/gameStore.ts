@@ -3,7 +3,7 @@ import * as sqliteGameStore from "./sqliteGameStore";
 import * as tursoGameStore from "./tursoGameStore";
 
 // Use Turso by default, use local SQLite only if USE_LOCAL_DB is set to 'true'
-export const USE_LOCAL_DB = process.env.USE_LOCAL_DB === "true";
+export const USE_LOCAL_DB = false || process.env.USE_LOCAL_DB === "true";
 
 export async function getGames(): Promise<Game[]> {
 	if (USE_LOCAL_DB) {
