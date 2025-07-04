@@ -1,36 +1,78 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Tic-Tac-Toe (Next.js + SQLite + Pusher)
+
+A real-time, multiplayer Tic-Tac-Toe web app built with Next.js, TypeScript, SQLite, and Pusher. Play classic Tic-Tac-Toe with a friend by sharing a game code—no matchmaking or public lobbies. The app features persistent game state, real-time updates, and a clean UI.
+
+## Features
+
+-   Real-time multiplayer gameplay using Pusher
+-   Persistent game state with SQLite
+-   Simple game code sharing (no matchmaking)
+-   Type-safe backend and frontend (TypeScript)
+-   Modern Next.js app directory structure
+-   Responsive and clean UI
+
+## Tech Stack
+
+-   **Frontend:** Next.js (React, TypeScript)
+-   **Backend:** Next.js API routes
+-   **Database:** SQLite (via better-sqlite3)
+-   **Realtime:** Pusher
 
 ## Getting Started
 
-First, run the development server:
+### 1. Install dependencies
+
+```bash
+npm install
+```
+
+### 2. Set up environment variables
+
+Create a `.env.local` file in the project root with your Pusher credentials:
+
+```env
+NEXT_PUBLIC_PUSHER_APP_KEY=your_pusher_app_key
+NEXT_PUBLIC_PUSHER_CLUSTER=your_pusher_cluster
+PUSHER_APP_ID=your_pusher_app_id
+PUSHER_SECRET=your_pusher_secret
+```
+
+### 3. Run the development server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Visit [http://localhost:3000](http://localhost:3000) to use the app.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 4. Database
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The SQLite database file will be created automatically in the project root (if not present). No manual setup is required.
 
-## Learn More
+## Usage
 
-To learn more about Next.js, take a look at the following resources:
+-   Start a new game and share the code with a friend.
+-   Both players join using the same code.
+-   The game state updates in real-time for both players.
+-   No matchmaking or public lobby system is included.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Deployment
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+You can deploy this app to Vercel, Netlify, or any platform that supports Next.js. Make sure to set the same environment variables in your hosting provider.
 
-## Deploy on Vercel
+## Environment Variables
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+| Name                       | Description             |
+| -------------------------- | ----------------------- |
+| NEXT_PUBLIC_PUSHER_APP_KEY | Pusher app key (public) |
+| NEXT_PUBLIC_PUSHER_CLUSTER | Pusher cluster (public) |
+| PUSHER_APP_ID              | Pusher app ID (server)  |
+| PUSHER_SECRET              | Pusher secret (server)  |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Contributing
+
+Pull requests and issues are welcome!
+
+## License
+
+MIT
