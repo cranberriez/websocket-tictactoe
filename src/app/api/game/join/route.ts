@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { pusher } from "@/lib/pusher";
-import { getGame } from "@/lib/gameStore";
+import { getGame, setGame } from "@/lib/gameStore";
 import { Player } from "@/types/game";
 
 export async function POST(request: Request) {
@@ -13,8 +13,21 @@ export async function POST(request: Request) {
 			return NextResponse.json({ error: "Game not found" }, { status: 404 });
 		}
 
-		// Check if the game is already full
-		if (game.players.length >= 2) {
+		// Always fetch the latest game from the DB (in case of race conditions)
+		const latestGame = getGame(gameCode);
+		if (!latestGame) {
+			return NextResponse.json({ error: "Game not found" }, { status: 404 });
+		}
+
+		// Check if the player is already in the game
+		const existingPlayer = latestGame.players.find((p) => p.id === playerId);
+		if (existingPlayer) {
+			// Player is already in the game, return game info without adding again
+			return NextResponse.json({ success: true, game: latestGame });
+		}
+
+		// If the game is full and player is not in it, return room full error
+		if (latestGame.players.length >= 2) {
 			return NextResponse.json({ error: "Game is already full" }, { status: 400 });
 		}
 
@@ -26,15 +39,17 @@ export async function POST(request: Request) {
 			wins: 0,
 		};
 
-		game.players.push(newPlayer);
+		const updatedPlayers = [...latestGame.players, newPlayer];
+		const updatedGame = { ...latestGame, players: updatedPlayers };
+		setGame(gameCode, updatedGame);
 
 		// Trigger a Pusher event to notify the host that a player has joined
 		await pusher.trigger(`game-${gameCode}`, "player-joined", {
 			player: newPlayer,
-			players: game.players,
+			players: updatedPlayers,
 		});
 
-		return NextResponse.json({ success: true, game });
+		return NextResponse.json({ success: true, game: updatedGame });
 	} catch (error) {
 		console.error("Error joining game:", error);
 		return NextResponse.json({ error: "Failed to join game" }, { status: 500 });

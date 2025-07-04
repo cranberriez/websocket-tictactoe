@@ -16,12 +16,12 @@ function generateGameCode(): string {
 export async function POST(request: Request) {
 	try {
 		const { playerName, playerId } = await request.json();
-		console.log('[CREATE] Received request:', { playerName, playerId });
+		console.log("[CREATE] Received request:", { playerName, playerId });
 
 		// Generate a unique game code
 		let gameCode = generateGameCode();
 		const games = getGames();
-		while (games.has(gameCode)) {
+		while (games.some((g) => g.gameCode === gameCode)) {
 			console.warn(`[CREATE] Collision on gameCode: ${gameCode}, regenerating...`);
 			gameCode = generateGameCode();
 		}
@@ -34,7 +34,7 @@ export async function POST(request: Request) {
 			role: "host",
 			wins: 0,
 		};
-		console.log('[CREATE] Host player:', hostPlayer);
+		console.log("[CREATE] Host player:", hostPlayer);
 
 		const game: Game = {
 			gameCode,
@@ -44,7 +44,7 @@ export async function POST(request: Request) {
 			currentTurn: null,
 			winner: null,
 		};
-		console.log('[CREATE] Game object:', game);
+		console.log("[CREATE] Game object:", game);
 
 		// Store the game
 		setGame(gameCode, game);
