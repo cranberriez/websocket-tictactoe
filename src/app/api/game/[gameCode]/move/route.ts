@@ -32,41 +32,58 @@ function isBoardFull(board: (string | null)[]): boolean {
 }
 
 export async function POST(request: Request, { params }: { params: { gameCode: string } }) {
+	console.log("[MOVE] Incoming move request", { params });
 	try {
 		// Await params to fix the dynamic route parameter bug
 		const { gameCode } = await Promise.resolve(params);
-		const { playerId, position } = await request.json();
+		const body = await request.json();
+		const { playerId, position } = body;
+		console.log("[MOVE] Parsed body", { playerId, position });
 
 		// Get the game from the centralized store
 		let game = getGame(gameCode);
+		console.log("[MOVE] Loaded game from store", { gameCode, game });
 
 		// Check if the game exists
 		if (!game) {
-			return NextResponse.json({ error: 'Game not found' }, { status: 404 });
+			console.warn(`[MOVE] Game not found for code: ${gameCode}`);
+			return NextResponse.json({ error: "Game not found" }, { status: 404 });
 		}
 
 		// Check if the game is in progress
 		if (game.status !== "playing") {
+			console.warn(`[MOVE] Game is not in progress. Status: ${game.status}`);
 			return NextResponse.json({ error: "Game is not in progress" }, { status: 400 });
 		}
 
 		// Check if it's the player's turn
 		if (game.currentTurn !== playerId) {
+			console.warn(
+				`[MOVE] Not player's turn. CurrentTurn: ${game.currentTurn}, playerId: ${playerId}`
+			);
 			return NextResponse.json({ error: "Not your turn" }, { status: 400 });
 		}
 
 		// Check if the position is valid and empty
 		if (position < 0 || position >= 9 || game.board[position] !== null) {
+			console.warn(`[MOVE] Invalid move position`, { position, board: game.board });
 			return NextResponse.json({ error: "Invalid move" }, { status: 400 });
 		}
 
 		// Make the move
 		game.board[position] = game.players[playerId]?.symbol || null;
+		console.log(`[MOVE] Move made`, {
+			playerId,
+			symbol: game.players[playerId]?.symbol,
+			position,
+			board: game.board,
+		});
 
 		// Check for a winner
 		const winningSymbol = checkWinner(game.board);
 
 		if (winningSymbol) {
+			console.log(`[MOVE] Winner detected`, { playerId, winningSymbol });
 			// We have a winner
 			game.status = "finished";
 			game.winner = playerId;
@@ -74,6 +91,7 @@ export async function POST(request: Request, { params }: { params: { gameCode: s
 				game.players[playerId].wins += 1;
 			}
 		} else if (isBoardFull(game.board)) {
+			console.log(`[MOVE] Board full, game is a tie`, { board: game.board });
 			// It's a tie
 			game.status = "finished";
 			game.winner = null;
@@ -82,6 +100,7 @@ export async function POST(request: Request, { params }: { params: { gameCode: s
 			const playerIds = Object.keys(game.players);
 			const nextPlayerId = playerIds.find((id) => id !== playerId) || playerId;
 			game.currentTurn = nextPlayerId;
+			console.log(`[MOVE] Next turn`, { nextPlayerId, board: game.board });
 		}
 
 		// Update the game in the centralized store

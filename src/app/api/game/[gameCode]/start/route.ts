@@ -35,7 +35,6 @@ export async function POST(request: Request, { params }: { params: { gameCode: s
 
 		// Update the game state in the centralized store
 		game.status = "playing";
-		setGame(gameCode, game);
 
 		// Randomly decide who goes first
 		const playerIds = Object.keys(game.players);
@@ -43,11 +42,13 @@ export async function POST(request: Request, { params }: { params: { gameCode: s
 		const startingPlayerId = playerIds[Math.floor(Math.random() * playerIds.length)];
 		game.currentTurn = startingPlayerId;
 		console.log("[START] currentTurn set to:", game.currentTurn, "player:", game.players[startingPlayerId]);
-		console.log("[START] Full game state:", JSON.stringify(game, null, 2));
 
 		// Reset the board
 		game.board = Array(9).fill(null);
 		game.winner = null;
+
+		console.log("[START] Full game state:", JSON.stringify(game, null, 2));
+		setGame(gameCode, game);
 
 		// Trigger a Pusher event to notify all players that the game has started
 		await pusher.trigger(`game-${gameCode}`, "game-started", {
