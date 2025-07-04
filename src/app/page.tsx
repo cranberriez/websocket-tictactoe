@@ -1,8 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import { useState } from "react";
-import { getPlayerId, setPlayerId, ensurePlayerId, clearPlayerId } from "@/lib/playerId";
+import { ensurePlayerId, clearPlayerId } from "@/lib/playerId";
 import { useRouter } from "next/navigation";
 
 export default function Home() {
