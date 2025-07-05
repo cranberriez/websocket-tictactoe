@@ -12,11 +12,6 @@ export default function Home() {
 	const [joinLoading, setJoinLoading] = useState(false);
 	const router = useRouter();
 
-	// TODO: remove later
-	if (typeof window !== "undefined") {
-		clearPlayerId();
-	}
-
 	// Generate and persist playerId
 	const playerId = ensurePlayerId();
 

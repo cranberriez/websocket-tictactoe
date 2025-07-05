@@ -32,14 +32,11 @@ export default function RoomPage() {
 				const response = await fetch(`/api/game/${gameCode}`);
 				if (!response.ok) throw new Error("Game not found");
 				const data = await response.json();
-				setGame(data.game);
+				const newGame = data.game as Game;
+				setGame(newGame);
+
 				// Host check
-				if (
-					storedPlayerId &&
-					(Object.values(data.game.players) as Player[]).some(
-						(p) => p.id === storedPlayerId && p.role === "host"
-					)
-				) {
+				if (storedPlayerId && newGame && newGame.players[storedPlayerId].role === "host") {
 					setIsHost(true);
 				}
 			} catch (error) {
