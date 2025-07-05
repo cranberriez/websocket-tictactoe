@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ensurePlayerId, clearPlayerId } from "@/lib/playerId";
+import { ensurePlayerId } from "@/lib/playerId";
 import { useRouter } from "next/navigation";
 import { getStoredPlayerName, setStoredPlayerName } from "@/lib/playerName";
 
