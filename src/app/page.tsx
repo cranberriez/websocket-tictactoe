@@ -3,9 +3,10 @@
 import { useState } from "react";
 import { ensurePlayerId, clearPlayerId } from "@/lib/playerId";
 import { useRouter } from "next/navigation";
+import { getStoredPlayerName, setStoredPlayerName } from "@/lib/playerName";
 
 export default function Home() {
-	const [playerName, setPlayerName] = useState("Player");
+	const [playerName, setPlayerName] = useState(getStoredPlayerName() || "Player");
 	const [joinCode, setJoinCode] = useState("");
 	const [showJoinInput, setShowJoinInput] = useState(false);
 	const [createLoading, setCreateLoading] = useState(false);
@@ -14,6 +15,11 @@ export default function Home() {
 
 	// Generate and persist playerId
 	const playerId = ensurePlayerId();
+
+	const handleNameChange = (name: string) => {
+		setPlayerName(name);
+		setStoredPlayerName(name);
+	};
 
 	const handleCreateGame = async () => {
 		setCreateLoading(true);
@@ -82,7 +88,7 @@ export default function Home() {
 						id="playerName"
 						type="text"
 						value={playerName}
-						onChange={(e) => setPlayerName(e.target.value)}
+						onChange={(e) => handleNameChange(e.target.value)}
 						className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
 						placeholder="Enter your name"
 					/>
